@@ -1,0 +1,67 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+
+    <div class="row">
+      <div class="col-10" >
+        <h2 class="listing-title">{{ listing.title }}</h2>
+        <p style="color:gray;">
+          {% if onwatchlist == True %}
+              <span class="badge badge-pill badge-success">Watchlist</span>
+          {% endif %}
+          Starting bid: ${{ listing.starting_bid }}
+      </p>
+      </div>
+
+      <div class="col-2" style="text-align: right;">
+        <form action="{% url 'listing' listing.id %}" method="post">
+          {% csrf_token %}
+          {% if onwatchlist == False %}
+              <input class="btn btn-outline-success" type="submit" name="addwatchlist" value="Add to Watchlist">
+          {% else %}
+              <input class="btn btn-outline-secondary" type="submit" name="removewatchlist" value="Remove from Watchlist">
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-6" style="text-align: center;">
+          <img src="{{ listing.image }}" alt="Image of Listing Item" style="max-width:100%; height:auto;">
+      </div>
+
+      <div class="col-6">
+            <b>Current Price<p style="font-size:30px;">${{listing.current_price}}</p></b>
+            <div class="alert alert-secondary" role="alert">
+                {{ listing.num_bids }} bid(s) so far.
+            </div>
+          <hr>
+
+          <form action="{% url 'listing' listing.id %}" method="post">
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="col-5">
+
+                      <div class="input-group">
+                          <div class="input-group-prepend">
+                              <div class="input-group-text">$</div>
+                          </div>
+                          <input type="text" class="form-control form-control-lg" placeholder="Enter Bid" name="new_bid">
+                      </div>
+                </div>
+                <div class="col-5">
+                    <button type="button" class="btn btn-success btn-lg" style="vertical-align:middle;">Place Bid</button>
+                </div>
+            </div>
+              <small class="text-muted">
+                  You must meet the minimum bid of ${{listing.current_price}}.
+              </small>
+
+          </form>
+
+
+      </div>
+    </div>
+
+
+{% endblock %}

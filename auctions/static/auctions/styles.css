@@ -1,0 +1,12 @@
+body {
+    padding: 30px;
+}
+
+.card-link, .card-link:hover {
+    text-decoration: none;
+}
+
+.listing-title{
+  font-family:  Arial, sans-serif;
+  font-weight: bold;
+}
