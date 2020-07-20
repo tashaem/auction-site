@@ -4,6 +4,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django import forms
+from django.contrib.auth.decorators import login_required
 
 from .models import *
 
@@ -196,4 +197,12 @@ def listing(request, listing_id):
         "owner": owner,
         "winning_user": winning_user,
         "comments":comments
+    })
+
+
+@login_required
+def watchlist(request):
+    watchlist = request.user.watchlist.all()
+    return render(request, "auctions/watchlist.html",{
+        "watchlist":watchlist
     })
