@@ -91,64 +91,98 @@ def listing(request, listing_id):
     # Retrieves info of requested listing in database
     listing = Listing.objects.get(pk=listing_id)
 
-    # Initializing error indicators as False
+
+    # Initializing additional HTML features' / error indicators as False
+    active = True
+    winning_user = False
+    onwatchlist = False
     watchlist_disable = False
     bid_disable = False
     bid_error = False
+    owner = False
 
-    if request.method=="POST":
+    if listing.active == True:
 
-        if 'addwatchlist' in request.POST:
 
-            # Adds to watchlist if user is authenticated and displays pop up text otherwise
-            if request.user.is_authenticated:
-                new_item = Watchlist(user= request.user,listing=listing)
-                new_item.save()
-            else:
-                watchlist_disable = True
+        if request.method=="POST":
 
-        elif 'removewatchlist' in request.POST:
+            if 'addwatchlist' in request.POST:
 
-            # Removes listing item from user's watchlist
-            Watchlist.objects.filter(user=request.user,listing=listing).delete()
-
-        elif 'placebid' in request.POST:
-
-            # Tries to add newly placed bid to DB if user is authenticated
-            if request.user.is_authenticated:
-                new_bid = float(request.POST["new_bid"])
-
-                # Checks if bid matches min requirements
-                if (new_bid < listing.current_price):
-                    bid_error=True
+                # Adds to watchlist if user is authenticated and displays pop up text otherwise
+                if request.user.is_authenticated:
+                    new_item = Watchlist(user= request.user,listing=listing)
+                    new_item.save()
                 else:
-                    # Adds to Bid model
-                    bid=Bid(user=request.user,listing=listing, new_bid=new_bid)
-                    bid.save()
+                    watchlist_disable = True
 
-                    # Updates Listing model
-                    listing.current_price = new_bid
-                    listing.save()
-            else:
-                bid_disable = True
+            elif 'removewatchlist' in request.POST:
 
-    # Allows listing page to show appropriate content depending on whether or not listing is in user's watchlist
-    try:
-        match_in_watchlist = Watchlist.objects.get(user=request.user, listing=listing)
-    except Watchlist.DoesNotExist: # should no such row exist in the database
-        match_in_watchlist = None
-    except: # should a user not be logged in hence AttributeError and TypeErrors surface
-        match_in_watchlist = None
+                # Removes listing item from user's watchlist
+                Watchlist.objects.filter(user=request.user,listing=listing).delete()
 
-    if match_in_watchlist !=None:
-        onwatchlist=True
-    else:
-        onwatchlist=False
+            elif 'placebid' in request.POST:
+
+                # Tries to add newly placed bid to DB if user is authenticated
+                if request.user.is_authenticated:
+                    new_bid = float(request.POST["new_bid"])
+
+                    # Checks if bid matches min requirements
+                    if (new_bid <= listing.current_price):
+                        bid_error=True
+                    else:
+                        # Adds to Bid model
+                        bid=Bid(user=request.user,listing=listing, new_bid=new_bid)
+                        bid.save()
+
+                        # Updates Listing model
+                        listing.current_price = new_bid
+                        listing.save()
+                        listing.num_bids += 1
+                        listing.save()
+                else:
+                    bid_disable = True
+
+            elif 'closeauction' in request.POST:
+
+                # Renders the listing no longer active
+                listing.active = False
+                listing.save()
+
+        try:
+            match_in_watchlist = Watchlist.objects.get(user=request.user, listing=listing)
+        except Watchlist.DoesNotExist: # should no such row exist in the database
+            match_in_watchlist = None
+        except: # should a user not be logged in hence AttributeError and TypeErrors surface
+            match_in_watchlist = None
+
+        # Allows listing page to show appropriate content depending on whether or not listing is in user's watchlist
+        if match_in_watchlist !=None:
+            onwatchlist=True
+
+        # Checks if user is listing's owner
+        if request.user.is_authenticated:
+            if (request.user == listing.owner):
+                owner = True
+
+    # Note: If instead of Elif to accomodate the case the auction was just active
+    if listing.active==False:
+        active = False
+
+        # Retrieves from the DB the winning user
+        winner = Bid.objects.get(listing=listing, new_bid=listing.current_price).user
+
+        if request.user.is_authenticated:
+            if (request.user == winner):
+                winning_user = True
+
 
     return render(request, "auctions/listing.html",{
+        "active":active,
         "listing": listing,
         "onwatchlist": onwatchlist,
         "watchlist_disable": watchlist_disable,
         "bid_disable": bid_disable,
-        "bid_error": bid_error
+        "bid_error": bid_error,
+        "owner": owner,
+        "winning_user": winning_user
     })

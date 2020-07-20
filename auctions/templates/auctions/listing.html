@@ -4,7 +4,12 @@
 
     <div class="row">
       <div class="col-9" >
-        <h2 class="listing-title">{{ listing.title }}</h2>
+        <h2 class="listing-title">{{ listing.title }}
+          {% if active == False %}
+              <span class="badge badge-danger">Closed</span>
+          {% endif %}
+        </h2>
+
         <p style="color:gray;">
           {% if onwatchlist == True %}
               <span class="badge badge-pill badge-success">Watchlist</span>
@@ -14,19 +19,21 @@
       </div>
 
       <div class="col-3" style="text-align: right;">
-        <form action="{% url 'listing' listing.id %}" method="post">
-          {% csrf_token %}
-          {% if onwatchlist == False %}
-              {% if watchlist_disable == True %}
-                  <input class="btn btn-secondary" type="submit" name="addwatchlist" value="Add to Watchlist" disabled>
-                  <br><small style="color:red;">You have to <a href="{% url 'login'%}" style="color:red;"><u>sign in</u></a> to do this!</small>
+        {% if active == True %}
+            <form action="{% url 'listing' listing.id %}" method="post">
+              {% csrf_token %}
+              {% if onwatchlist == False %}
+                  {% if watchlist_disable == True %}
+                      <input class="btn btn-secondary" type="submit" name="addwatchlist" value="Add to Watchlist" disabled>
+                      <br><small style="color:red;">You have to <a href="{% url 'login'%}" style="color:red;"><u>sign in</u></a> to do this!</small>
+                  {% else %}
+                      <input class="btn btn-outline-success" type="submit" name="addwatchlist" value="Add to Watchlist">
+                  {% endif %}
               {% else %}
-                  <input class="btn btn-outline-success" type="submit" name="addwatchlist" value="Add to Watchlist">
+                  <input class="btn btn-outline-secondary" type="submit" name="removewatchlist" value="Remove from Watchlist">
               {% endif %}
-          {% else %}
-              <input class="btn btn-outline-secondary" type="submit" name="removewatchlist" value="Remove from Watchlist">
-          {% endif %}
-        </form>
+            </form>
+        {% endif %}
       </div>
     </div>
 
@@ -35,52 +42,78 @@
           <img src="{{ listing.image }}" alt="Image of Listing Item" style="max-width:100%; height:auto;">
       </div>
 
-      <div class="col-6">
-            <b>Current Price<p style="font-size:30px;">${{listing.current_price}}</p></b>
-            <div class="alert alert-secondary" role="alert">
-                {{ listing.num_bids }} bid(s) so far.
-            </div>
-          <hr>
 
-          <form action="{% url 'listing' listing.id %}" method="post">
-            {% csrf_token %}
-            <div class="form-row">
-                <div class="col-5">
+        <div class="col-6">
+          {% if active == True %}
 
-                      <div class="input-group">
-                          <div class="input-group-prepend">
-                              <div class="input-group-text">$</div>
+                <b>Current Price<p style="font-size:30px;">${{listing.current_price}}</p></b>
+                <div class="alert alert-secondary" role="alert">
+                    {{ listing.num_bids }} bid(s) so far.
+                </div>
+
+              <hr>
+
+              <form action="{% url 'listing' listing.id %}" method="post">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="col-5">
+
+                          <div class="input-group">
+                              <div class="input-group-prepend">
+                                  <div class="input-group-text">$</div>
+                              </div>
+                              <input type="text" class="form-control form-control-lg" placeholder="Enter Bid" name="new_bid">
                           </div>
-                          <input type="text" class="form-control form-control-lg" placeholder="Enter Bid" name="new_bid">
-                      </div>
+                    </div>
+                    <div class="col-5">
+                      {% if bid_disable == False %}
+                        <input type="submit" class="btn btn-success btn-lg" style="vertical-align:middle;" name="placebid" placeholder="Place Bid">
+                      {% else %}
+                        <input type="submit" class="btn btn-secondary btn-lg" style="vertical-align:middle;" name="placebid" placeholder="Place Bid" disabled>
+                      {% endif %}
+                    </div>
                 </div>
-                <div class="col-5">
-                  {% if bid_disable == False %}
-                    <input type="submit" class="btn btn-success btn-lg" style="vertical-align:middle;" name="placebid" placeholder="Place Bid">
+                  {% if bid_error == False %}
+                      {% if bid_disable == True %}
+                          <small style="color:red;">
+                              You have to <a href="{% url 'login'%}" style="color:red;"><u>sign in</u></a> to do this!<br>
+                          </small>
+                      {% endif %}
+                      <small class="text-muted">
+                          You must meet the minimum bid of ${{listing.current_price}}.
+                      </small>
                   {% else %}
-                    <input type="submit" class="btn btn-secondary btn-lg" style="vertical-align:middle;" name="placebid" placeholder="Place Bid" disabled>
-                  {% endif %}
-                </div>
-            </div>
-              {% if bid_error == False %}
-                  {% if bid_disable == True %}
                       <small style="color:red;">
-                          You have to <a href="{% url 'login'%}" style="color:red;"><u>sign in</u></a> to do this!<br>
+                          You must meet the minimum bid of ${{listing.current_price}}.
                       </small>
                   {% endif %}
-                  <small class="text-muted">
-                      You must meet the minimum bid of ${{listing.current_price}}.
-                  </small>
-              {% else %}
-                  <small style="color:red;">
-                      You must meet the minimum bid of ${{listing.current_price}}.
-                  </small>
+
+              </form>
+
+              {% if owner == True %}
+                  <hr>
+                  <form action="{% url 'listing' listing.id %}" method="POST" style="text-align:center;">
+                    {% csrf_token %}
+                    <div class="form-group">
+                    <input type="submit" class="btn btn-outline-warning btn-lg btn-block" value="Close Auction" id="closeauction" name="closeauction">
+                    <small class="text-muted">The current bidder will be the winner of the auction.</small>
+                    </div>
+                  </form>
               {% endif %}
 
-          </form>
-
-
-      </div>
+          {% else %} <!--if active == False-->
+              <b>Winning Price<p style="font-size:30px;">${{listing.current_price}}</p></b>
+              {% if winning_user == True %}
+                <div class="alert alert-success" role="alert">
+                    <b>You have won the auction!</b> {{ listing.num_bids }} bid(s) were made.
+                </div>
+              {% else %}
+                <div class="alert alert-secondary" role="alert">
+                    {{ listing.num_bids }} bid(s) were made.
+                </div>
+              {% endif %}
+          {% endif %}
+        </div>
     </div>
 
 
