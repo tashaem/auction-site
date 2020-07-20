@@ -8,9 +8,6 @@ from django.contrib.auth.decorators import login_required
 
 from .models import *
 
-#class PlaceNewBid(forms.Form, min_value):
-#    new_bid=forms.DecimalField(max_digits=6, decimal_places=2, min_value=min_value)
-
 def index(request):
 
     # Retrieve active listings from database
