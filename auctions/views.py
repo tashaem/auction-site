@@ -91,25 +91,53 @@ def listing(request, listing_id):
     # Retrieves info of requested listing in database
     listing = Listing.objects.get(pk=listing_id)
 
+    # Initializing error indicators as False
+    watchlist_disable = False
+    bid_disable = False
+    bid_error = False
+
     if request.method=="POST":
 
         if 'addwatchlist' in request.POST:
-            # "add to watchlist"-> if user is authenticated -> add to watchlist
-                if request.user.is_authenticated:
-                    new_item = Watchlist(user= request.user,listing=listing)
-                    new_item.save()
-            #                       else --> pop up
+
+            # Adds to watchlist if user is authenticated and displays pop up text otherwise
+            if request.user.is_authenticated:
+                new_item = Watchlist(user= request.user,listing=listing)
+                new_item.save()
+            else:
+                watchlist_disable = True
+
         elif 'removewatchlist' in request.POST:
+
+            # Removes listing item from user's watchlist
             Watchlist.objects.filter(user=request.user,listing=listing).delete()
-        #else:
-        # add bid -> if user isnt authenticated -> grayed out + note
-        #                           else --> can make a bid
+
+        elif 'placebid' in request.POST:
+
+            # Tries to add newly placed bid to DB if user is authenticated
+            if request.user.is_authenticated:
+                new_bid = float(request.POST["new_bid"])
+
+                # Checks if bid matches min requirements
+                if (new_bid < listing.current_price):
+                    bid_error=True
+                else:
+                    # Adds to Bid model
+                    bid=Bid(user=request.user,listing=listing, new_bid=new_bid)
+                    bid.save()
+
+                    # Updates Listing model
+                    listing.current_price = new_bid
+                    listing.save()
+            else:
+                bid_disable = True
 
     # Allows listing page to show appropriate content depending on whether or not listing is in user's watchlist
-
     try:
         match_in_watchlist = Watchlist.objects.get(user=request.user, listing=listing)
-    except Watchlist.DoesNotExist:
+    except Watchlist.DoesNotExist: # should no such row exist in the database
+        match_in_watchlist = None
+    except: # should a user not be logged in hence AttributeError and TypeErrors surface
         match_in_watchlist = None
 
     if match_in_watchlist !=None:
@@ -119,5 +147,8 @@ def listing(request, listing_id):
 
     return render(request, "auctions/listing.html",{
         "listing": listing,
-        "onwatchlist": onwatchlist
+        "onwatchlist": onwatchlist,
+        "watchlist_disable": watchlist_disable,
+        "bid_disable": bid_disable,
+        "bid_error": bid_error
     })
