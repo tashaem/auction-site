@@ -175,6 +175,16 @@ def listing(request, listing_id):
             if (request.user == winner):
                 winning_user = True
 
+    # Saves new comment into DB
+    if request.user.is_authenticated:
+        if request.method=="POST":
+            if 'commentbtn' in request.POST:
+                comment = request.POST["commentbox"]
+                new_comment = Comment(user=request.user, listing=listing, comment=comment)
+                new_comment.save()
+
+    # Fetches all existing comments from DB
+    comments = Comment.objects.filter(listing=listing).order_by('-id')
 
     return render(request, "auctions/listing.html",{
         "active":active,
@@ -184,5 +194,6 @@ def listing(request, listing_id):
         "bid_disable": bid_disable,
         "bid_error": bid_error,
         "owner": owner,
-        "winning_user": winning_user
+        "winning_user": winning_user,
+        "comments":comments
     })

@@ -116,5 +116,22 @@
         </div>
     </div>
 
-
+    <h4 style="margin-top:20px;">Comments</h4>
+    <hr>
+    <form action="{% url 'listing' listing.id %}" method="post">
+      <div class="form-group" style="margin-top:10px;">
+        {% csrf_token %}
+        <textarea class="form-control" name="commentbox" rows="3" placeholder="Add a comment.."></textarea>
+      </div>
+      <div class="form-group">
+        <input type="submit" class="btn btn-outline-dark" value="Comment" name="commentbtn">
+      </div>
+    </form>
+    {% for comment in comments %}
+        <dl class="row">
+          <dt class="col-sm-3">@{{ comment.user.username }}</dt>
+          <dd class="col-sm-9">"{{ comment.comment }}"</dd>
+        </dl>
+    {% endfor %}
+    <hr>
 {% endblock %}
